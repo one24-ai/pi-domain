@@ -1,5 +1,5 @@
 {
-  "name": "@one24-ai/pi-recall",
+  "name": "@one24-ai/pi-domain",
   "version": "0.1.0",
   "description": "Persistent memory for pi: a local SQLite store with tools for the model, a short budgeted recall at the start of each session, compaction summaries kept as searchable notes, daily snapshots, and optional pi-halo rows and sidebar.",
   "type": "module",
@@ -7,11 +7,11 @@
   "author": "Zach Koncir <zach@one24.ai>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/one24-ai/pi-recall.git"
+    "url": "git+https://github.com/one24-ai/pi-domain.git"
   },
-  "homepage": "https://github.com/one24-ai/pi-recall#readme",
+  "homepage": "https://github.com/one24-ai/pi-domain#readme",
   "bugs": {
-    "url": "https://github.com/one24-ai/pi-recall/issues"
+    "url": "https://github.com/one24-ai/pi-domain/issues"
   },
   "engines": {
     "node": ">=22.19.0"
@@ -26,7 +26,7 @@
   ],
   "pi": {
     "extensions": [
-      "./extensions/recall/index.ts"
+      "./extensions/domain/index.ts"
     ]
   },
   "files": [

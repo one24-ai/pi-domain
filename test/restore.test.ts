@@ -9,18 +9,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";
-import { backupDb, listBackups } from "../extensions/recall/backup.ts";
-import { findSnapshot, inspectSnapshot, listSnapshots, restoreSnapshot, snapshotLabel } from "../extensions/recall/restore.ts";
-import { MemoryStore } from "../extensions/recall/store.ts";
+import { backupDb, listBackups } from "../extensions/domain/backup.ts";
+import { findSnapshot, inspectSnapshot, listSnapshots, restoreSnapshot, snapshotLabel } from "../extensions/domain/restore.ts";
+import { MemoryStore } from "../extensions/domain/store.ts";
 
-const temp = () => mkdtempSync(join(tmpdir(), "pi-recall-restore-"));
+const temp = () => mkdtempSync(join(tmpdir(), "pi-domain-restore-"));
 const at = (h: number, m = 0, s = 0) => new Date(2026, 9, 5, h, m, s);
 const texts = (s: MemoryStore) => s.recall(["global"], 50).map((m) => m.text).sort();
 const idOf = (s: MemoryStore, text: string) => s.recall(["global"], 50).find((m) => m.text === text)!.id;
 
 /** A live store with "alpha", "bravo", "charlie", and a snapshot taken at 09:00 of that state. */
 function setup(dir: string) {
-	const live = join(dir, "recall.db");
+	const live = join(dir, "domain.db");
 	const store = new MemoryStore(live);
 	for (const t of ["alpha", "bravo", "charlie"]) store.write({ scope: "global", kind: "fact", text: t });
 	const snap = backupDb(live, join(dir, "b"), at(9));
@@ -100,16 +100,16 @@ test("a damaged, missing or wrong-version snapshot is refused and changes nothin
 	const dir = temp();
 	try {
 		const { store, live, backups } = setup(dir);
-		writeFileSync(join(backups, "recall-20261005-100000.db"), "garbage".repeat(200));
-		const old = new DatabaseSync(join(backups, "recall-20261005-110000.db"));
+		writeFileSync(join(backups, "domain-20261005-100000.db"), "garbage".repeat(200));
+		const old = new DatabaseSync(join(backups, "domain-20261005-110000.db"));
 		old.exec("CREATE TABLE memories (id INTEGER PRIMARY KEY, text TEXT); PRAGMA user_version = 99");
 		old.close();
 		const before = texts(store);
 		const files = readdirSync(backups).sort();
-		assert.throws(() => restoreSnapshot(store, live, backups, "recall-20261005-100000.db", at(12)), /cannot be restored/);
-		assert.throws(() => restoreSnapshot(store, live, backups, "recall-20261005-110000.db", at(12)), /schema version 99/);
-		assert.throws(() => restoreSnapshot(store, live, backups, "recall-20200101-000000.db", at(12)), /no snapshot named/);
-		assert.throws(() => restoreSnapshot(store, live, backups, "../recall.db", at(12)), /no snapshot named/, "a path is not a snapshot name");
+		assert.throws(() => restoreSnapshot(store, live, backups, "domain-20261005-100000.db", at(12)), /cannot be restored/);
+		assert.throws(() => restoreSnapshot(store, live, backups, "domain-20261005-110000.db", at(12)), /schema version 99/);
+		assert.throws(() => restoreSnapshot(store, live, backups, "domain-20200101-000000.db", at(12)), /no snapshot named/);
+		assert.throws(() => restoreSnapshot(store, live, backups, "../domain.db", at(12)), /no snapshot named/, "a path is not a snapshot name");
 		assert.deepEqual(texts(store), before);
 		assert.deepEqual(readdirSync(backups).sort(), files, "and no safety snapshot was written");
 		store.close();
@@ -153,11 +153,11 @@ test("listing shows snapshots newest first with their counts, and marks a damage
 	const dir = temp();
 	try {
 		const { store, backups } = setup(dir);
-		backupDb(join(dir, "recall.db"), backups, at(15));
-		writeFileSync(join(backups, "recall-20261005-120000.db"), "garbage".repeat(200));
+		backupDb(join(dir, "domain.db"), backups, at(15));
+		writeFileSync(join(backups, "domain-20261005-120000.db"), "garbage".repeat(200));
 		const snaps = listSnapshots(backups);
-		assert.deepEqual(snaps.map((s) => s.name), ["recall-20261005-150000.db", "recall-20261005-120000.db", "recall-20261005-090000.db"]);
-		assert.deepEqual(snaps.map(snapshotLabel), ["recall-20261005-150000.db  3 memories", "recall-20261005-120000.db  damaged", "recall-20261005-090000.db  3 memories"]);
+		assert.deepEqual(snaps.map((s) => s.name), ["domain-20261005-150000.db", "domain-20261005-120000.db", "domain-20261005-090000.db"]);
+		assert.deepEqual(snaps.map(snapshotLabel), ["domain-20261005-150000.db  3 memories", "domain-20261005-120000.db  damaged", "domain-20261005-090000.db  3 memories"]);
 		assert.ok(snaps[1]!.error);
 		store.close();
 	} finally {
@@ -170,8 +170,8 @@ test("findSnapshot accepts the file name, the name without .db, or just the date
 	try {
 		const { store, backups } = setup(dir);
 		const snaps = listSnapshots(backups);
-		for (const want of ["recall-20261005-090000.db", "recall-20261005-090000", "20261005-090000", " 20261005-090000 "]) {
-			assert.equal(findSnapshot(snaps, want)?.name, "recall-20261005-090000.db", want);
+		for (const want of ["domain-20261005-090000.db", "domain-20261005-090000", "20261005-090000", " 20261005-090000 "]) {
+			assert.equal(findSnapshot(snaps, want)?.name, "domain-20261005-090000.db", want);
 		}
 		assert.equal(findSnapshot(snaps, "20261005"), undefined);
 		store.close();
@@ -183,7 +183,7 @@ test("findSnapshot accepts the file name, the name without .db, or just the date
 test("a snapshot of an empty database restores to an empty database", () => {
 	const dir = temp();
 	try {
-		const live = join(dir, "recall.db");
+		const live = join(dir, "domain.db");
 		const store = new MemoryStore(live);
 		const empty = backupDb(live, join(dir, "b"), at(8));
 		store.write({ scope: "global", kind: "fact", text: "x" });

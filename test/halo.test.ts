@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { haloLoaded, markPlainMessage, offerToolRows, registerSidebar, type SidebarState, toolRowSpecs } from "../extensions/recall/halo.ts";
+import { haloLoaded, markPlainMessage, offerToolRows, registerSidebar, type SidebarState, toolRowSpecs } from "../extensions/domain/halo.ts";
 
 const REGISTRY = Symbol.for("pi-halo/registry");
 const PENDING = Symbol.for("pi-halo/pendingToolRows");
@@ -33,11 +33,11 @@ test("every memory tool has a complete row spec", () => {
 	}
 });
 
-test("with halo loaded the rows are registered under pi-recall's id", () => {
+test("with halo loaded the rows are registered under pi-domain's id", () => {
 	const calls: any[] = [];
 	const g = { [REGISTRY]: { register() {}, toolRowsVersion: 1, registerToolRows: (specs: any, o: any) => (calls.push({ specs, o }), () => calls.push("removed")) } };
 	const remove = offerToolRows(g);
-	assert.equal(calls[0].o.id, "pi-recall");
+	assert.equal(calls[0].o.id, "pi-domain");
 	assert.ok("memory_get" in calls[0].specs);
 	remove();
 	assert.equal(calls[1], "removed");
@@ -80,7 +80,7 @@ test("the sidebar registers only with halo, and shows recall size and this sessi
 	const ctx = { hasUI: true };
 	assert.ok(registerSidebar({}, ctx, () => state, () => {}, g));
 	assert.equal(ctxGiven, ctx, "the session's ctx is passed so the widget starts at once");
-	assert.equal(spec.id, "pi-recall");
+	assert.equal(spec.id, "pi-domain");
 	assert.equal(spec.sidebar, "section");
 	assert.deepEqual(spec.render({}).text, "none yet");
 

@@ -38,4 +38,4 @@ jobs:
         run: |
           v="${GITHUB_REF_NAME#v}"
           awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {p=1; next} /^## \[/ {p=0} p' CHANGELOG.md > notes.md
-          gh release create "$GITHUB_REF_NAME" --title "pi-recall $v" --notes-file notes.md
+          gh release create "$GITHUB_REF_NAME" --title "pi-domain $v" --notes-file notes.md

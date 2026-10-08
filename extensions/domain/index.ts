@@ -1,5 +1,5 @@
 /**
- * pi-recall: persistent memory for pi, in a local SQLite database.
+ * pi-domain: persistent memory for pi, in a local SQLite database.
  *
  *  - Tools for the model: memory_write, memory_update, memory_search, memory_get and
  *    memory_forget (each deletion confirmed by the user).
@@ -12,7 +12,7 @@
  *  - With pi-halo loaded: halo-styled tool rows and a sidebar section (see halo.ts). Optional.
  *
  * Memories are scoped per git repository with a shared `global` scope (scope.ts). The database is
- * ~/.local/share/pi-recall/recall.db (paths.ts); settings are in pi-recall.json (settings.ts).
+ * ~/.local/share/pi-domain/domain.db (paths.ts); settings are in pi-domain.json (settings.ts).
  */
 
 import { StringEnum } from "@earendil-works/pi-ai";
@@ -370,7 +370,7 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", (_event, ctx) => {
 		const loaded = loadSettings(settingsPath(getAgentDir()));
 		settings = loaded.settings;
-		if (loaded.error && ctx.hasUI) ctx.ui.notify(`pi-recall: ignoring ${loaded.path} (${loaded.error})`, "warning");
+		if (loaded.error && ctx.hasUI) ctx.ui.notify(`pi-domain: ignoring ${loaded.path} (${loaded.error})`, "warning");
 		const s = openStore();
 		// A snapshot when the newest is old enough, quietly: only a failure is worth a word.
 		try {
@@ -382,7 +382,7 @@ export default function (pi: ExtensionAPI) {
 				keep: settings.backup.keep,
 			});
 		} catch (err) {
-			if (ctx.hasUI) ctx.ui.notify(`pi-recall: automatic backup failed: ${(err as Error).message}`, "warning");
+			if (ctx.hasUI) ctx.ui.notify(`pi-domain: automatic backup failed: ${(err as Error).message}`, "warning");
 		}
 		resetRecall();
 		sidebar?.dispose();
@@ -424,7 +424,7 @@ export default function (pi: ExtensionAPI) {
 		);
 		if (digest.pinnedLeftOut > 0 && ctx.hasUI) {
 			ctx.ui.notify(
-				`pi-recall: ${digest.pinnedLeftOut} pinned ${digest.pinnedLeftOut === 1 ? "memory does" : "memories do"} not fit the recall budget; shorten or unpin some (/memory-tidy), or raise recall.maxChars`,
+				`pi-domain: ${digest.pinnedLeftOut} pinned ${digest.pinnedLeftOut === 1 ? "memory does" : "memories do"} not fit the recall budget; shorten or unpin some (/memory-tidy), or raise recall.maxChars`,
 				"info",
 			);
 		}

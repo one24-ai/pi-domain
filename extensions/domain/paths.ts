@@ -1,8 +1,8 @@
 /**
- * Where pi-recall keeps its database and snapshots.
+ * Where pi-domain keeps its database and snapshots.
  *
- * PI_RECALL_DB names the database file. Otherwise it lives in the XDG data directory:
- * $XDG_DATA_HOME/pi-recall/recall.db, else ~/.local/share/pi-recall/recall.db.
+ * PI_DOMAIN_DB names the database file. Otherwise it lives in the XDG data directory:
+ * $XDG_DATA_HOME/pi-domain/domain.db, else ~/.local/share/pi-domain/domain.db.
  *
  * Free of pi imports so it can be tested on its own.
  */
@@ -22,15 +22,15 @@ type Env = Record<string, string | undefined>;
 /** The directory holding the database and its backups. */
 export function dataDir(env: Env = process.env, home: string = homedir()): string {
 	const xdg = env.XDG_DATA_HOME;
-	return join(xdg && isAbsolute(xdg) ? xdg : join(home, ".local", "share"), "pi-recall");
+	return join(xdg && isAbsolute(xdg) ? xdg : join(home, ".local", "share"), "pi-domain");
 }
 
 export function defaultDbPath(env: Env = process.env, home: string = homedir()): string {
-	return join(dataDir(env, home), "recall.db");
+	return join(dataDir(env, home), "domain.db");
 }
 
 export function resolveDb(env: Env = process.env, home: string = homedir()): DbLocation {
-	if (env.PI_RECALL_DB) return { path: env.PI_RECALL_DB, source: "env" };
+	if (env.PI_DOMAIN_DB) return { path: env.PI_DOMAIN_DB, source: "env" };
 	return { path: defaultDbPath(env, home), source: "default" };
 }
 

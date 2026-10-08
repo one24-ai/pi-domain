@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to pi-recall are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org).
+All notable changes to pi-domain are listed here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
@@ -17,8 +17,8 @@ First public release.
 - Compaction summaries kept as searchable `summary` memories.
 - Commands: `/memory`, `/memory-pin`, `/memory-forget`, `/memory-tidy`, `/memory-backup`, `/memory-restore`.
 - Daily snapshots at session start, checked before they count.
-- Settings in `pi-recall.json`.
+- Settings in `pi-domain.json`.
 - Optional pi-halo pairing: halo tool rows, a plain recall row and a sidebar section, through halo's globals only.
 
-[Unreleased]: https://github.com/one24-ai/pi-recall/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/one24-ai/pi-recall/releases/tag/v0.1.0
+[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/one24-ai/pi-domain/releases/tag/v0.1.0

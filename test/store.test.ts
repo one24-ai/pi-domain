@@ -7,7 +7,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildMatchExpression, MemoryStore } from "../extensions/recall/store.ts";
+import { buildMatchExpression, MemoryStore } from "../extensions/domain/store.ts";
 
 function newStore(): MemoryStore {
 	return new MemoryStore(":memory:");
@@ -164,7 +164,7 @@ test("close is idempotent", () => {
 });
 
 test("supersededIds finds replacements but not extensions", async () => {
-	const { supersededIds } = await import("../extensions/recall/store.ts");
+	const { supersededIds } = await import("../extensions/domain/store.ts");
 	assert.deepEqual(supersededIds("Supersedes memory #33: Docker lives elsewhere."), [33]);
 	assert.deepEqual(supersededIds("Supersedes #9 and #13; also extends #14."), [9, 13]);
 	assert.deepEqual(supersededIds("Extends pinned memory #9: more patches."), []);
@@ -221,7 +221,7 @@ test("similar prefers keeping the pinned row", () => {
 });
 
 test("extends chains become merge candidates, oldest base first", async () => {
-	const { extendedIds } = await import("../extensions/recall/store.ts");
+	const { extendedIds } = await import("../extensions/domain/store.ts");
 	assert.deepEqual(extendedIds("Extends pinned memories #9/#13: also drops the icon."), [9, 13]);
 	const s = newStore();
 	const scope = "project:foo";

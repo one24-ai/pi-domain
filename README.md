@@ -1,13 +1,15 @@
-# pi-recall
+# pi-domain
 
 Persistent memory for [pi](https://pi.dev). The model saves decisions, preferences, facts and gotchas as it works; the next session starts with a short index of them, and anything else is a search away. Everything stays in one SQLite file on your machine.
+
+Named after the Domain, the Forerunners' store of knowledge and ancestral memory in the Halo universe.
 
 Requires pi 1.1 and Node.js 22.19 or later (for `node:sqlite`).
 
 ```bash
-pi install npm:@one24-ai/pi-recall@0.1.0                        # from npm, pinned
-pi install git:github.com/one24-ai/pi-recall@v0.1.0   # from git, pinned to a tag
-pi install /path/to/pi-recall                         # a local checkout
+pi install npm:@one24-ai/pi-domain@0.1.0                        # from npm, pinned
+pi install git:github.com/one24-ai/pi-domain@v0.1.0   # from git, pinned to a tag
+pi install /path/to/pi-domain                         # a local checkout
 ```
 
 ## How it works
@@ -58,7 +60,7 @@ Memories from earlier sessions (project:my-app and global). Lines ending in [N c
 
 ## Settings
 
-Optional. Put any of these in `~/.pi/agent/pi-recall.json` (or `$PI_CODING_AGENT_DIR/pi-recall.json`). Values are read at session start, checked and clamped; a missing or malformed file means the defaults, with a warning for a malformed one.
+Optional. Put any of these in `~/.pi/agent/pi-domain.json` (or `$PI_CODING_AGENT_DIR/pi-domain.json`). Values are read at session start, checked and clamped; a missing or malformed file means the defaults, with a warning for a malformed one.
 
 ```json
 {
@@ -82,7 +84,7 @@ Optional. Put any of these in `~/.pi/agent/pi-recall.json` (or `$PI_CODING_AGENT
 | `backup.everyHours` | 24 | Hours between automatic snapshots. 0 turns them off |
 | `backup.keep` | 20 | Snapshots kept |
 
-The database is `$XDG_DATA_HOME/pi-recall/recall.db`, else `~/.local/share/pi-recall/recall.db`, with snapshots in `backups/` beside it. `PI_RECALL_DB=/path/to/file.db` uses another file (its snapshots go beside it too).
+The database is `$XDG_DATA_HOME/pi-domain/domain.db`, else `~/.local/share/pi-domain/domain.db`, with snapshots in `backups/` beside it. `PI_DOMAIN_DB=/path/to/file.db` uses another file (its snapshots go beside it too).
 
 ## What it costs
 
@@ -90,17 +92,17 @@ The tools add about 2,750 characters (roughly 700 tokens) to every request: thei
 
 ## Privacy
 
-pi-recall makes no network requests. Memories are stored in the SQLite file above and are sent only to the model you use, as part of the conversation, like anything else in it. Do not ask it to remember secrets. To remove everything, delete the `pi-recall` data directory.
+pi-domain makes no network requests. Memories are stored in the SQLite file above and are sent only to the model you use, as part of the conversation, like anything else in it. Do not ask it to remember secrets. To remove everything, delete the `pi-domain` data directory.
 
 ## With pi-halo
 
-pi-recall works the same with or without [pi-halo](https://github.com/one24-ai/pi-halo), and neither package depends on the other. When halo is loaded:
+pi-domain works the same with or without [pi-halo](https://github.com/one24-ai/pi-halo), and neither package depends on the other. When halo is loaded:
 
 - the memory tools are drawn as halo's one-line rows (`󰧑 Remember fact Use pnpm…   #12 saved`),
 - the recall message is one plain row (`󰧑 Recall session memories   17 of 32 memories`), expanding to the index,
 - a Memory section in the sidebar shows the recall size (`17/32 · 3.8K/4.0K`: memories listed of those that could be, characters used of the budget) and the memories saved or changed in this session; click one to read it.
 
-Without halo, pi-recall draws its own compact tool rows and a boxed recall message, and shows no sidebar. The pairing goes through the documented globals halo leaves on `globalThis` (see `extensions/recall/halo.ts`), so the two can be installed, updated and removed separately.
+Without halo, pi-domain draws its own compact tool rows and a boxed recall message, and shows no sidebar. The pairing goes through the documented globals halo leaves on `globalThis` (see `extensions/domain/halo.ts`), so the two can be installed, updated and removed separately.
 
 ## Development
 
@@ -118,3 +120,7 @@ The tests link the installed pi's packages into `node_modules` (`scripts/link-pi
 ## License
 
 MIT
+
+## Trademarks
+
+Halo is a trademark of Microsoft Corporation. pi-domain is an independent project, not affiliated with or endorsed by Microsoft, Xbox Game Studios or Halo Studios; the name is a nod to the fiction and the package uses no Halo artwork, code or game content.

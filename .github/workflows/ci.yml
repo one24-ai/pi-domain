@@ -21,11 +21,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The tests and type check link the installed pi's packages; install the pi version pi-recall targets.
+      # The tests and type check link the installed pi's packages; install the pi version pi-domain targets.
       - run: pnpm add --global @earendil-works/pi-coding-agent@1.1.0
       - run: pnpm check
       - name: The packed tarball has the extension and nothing else it should not
         run: |
           pnpm pack
-          tar tzf one24-ai-pi-recall-*.tgz | grep -q '^package/extensions/recall/index.ts$'
-          ! tar tzf one24-ai-pi-recall-*.tgz | grep -E '^package/(test|scripts|\.github)/'
+          tar tzf one24-ai-pi-domain-*.tgz | grep -q '^package/extensions/domain/index.ts$'
+          ! tar tzf one24-ai-pi-domain-*.tgz | grep -E '^package/(test|scripts|\.github)/'

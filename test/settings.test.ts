@@ -3,10 +3,10 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { DEFAULT_SETTINGS, loadSettings, parseSettings, settingsPath } from "../extensions/recall/settings.ts";
+import { DEFAULT_SETTINGS, loadSettings, parseSettings, settingsPath } from "../extensions/domain/settings.ts";
 
 test("no file: the defaults, and no error", () => {
-	const r = loadSettings(join(tmpdir(), "pi-recall-none", "pi-recall.json"));
+	const r = loadSettings(join(tmpdir(), "pi-domain-none", "pi-domain.json"));
 	assert.deepEqual(r.settings, DEFAULT_SETTINGS);
 	assert.equal(r.error, undefined);
 });
@@ -36,9 +36,9 @@ test("anything that is not an object is the defaults", () => {
 });
 
 test("a malformed file gives the defaults and says why", () => {
-	const dir = mkdtempSync(join(tmpdir(), "pi-recall-settings-"));
+	const dir = mkdtempSync(join(tmpdir(), "pi-domain-settings-"));
 	try {
-		const path = join(dir, "pi-recall.json");
+		const path = join(dir, "pi-domain.json");
 		writeFileSync(path, "{ recall: ");
 		const r = loadSettings(path);
 		assert.deepEqual(r.settings, DEFAULT_SETTINGS);
@@ -51,7 +51,7 @@ test("a malformed file gives the defaults and says why", () => {
 });
 
 test("the file lives in pi's agent directory", () => {
-	assert.equal(settingsPath("/cfg"), "/cfg/pi-recall.json");
+	assert.equal(settingsPath("/cfg"), "/cfg/pi-domain.json");
 });
 
 test("a recall budget too small for the header is raised; 0 turns recall off", () => {

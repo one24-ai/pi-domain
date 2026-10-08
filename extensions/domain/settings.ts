@@ -1,5 +1,5 @@
 /**
- * pi-recall settings, read from pi-recall.json in pi's agent directory (~/.pi/agent unless pi
+ * pi-domain settings, read from pi-domain.json in pi's agent directory (~/.pi/agent unless pi
  * is told otherwise). Every key is optional; a missing file, a malformed file
  * or a value of the wrong type falls back to the default, so a typo never stops pi from starting.
  *
@@ -58,9 +58,9 @@ export const DEFAULT_SETTINGS: RecallSettings = {
 	backup: { everyHours: 24, keep: 20 },
 };
 
-/** pi-recall.json in pi's agent directory (pass pi's getAgentDir()). */
+/** pi-domain.json in pi's agent directory (pass pi's getAgentDir()). */
 export function settingsPath(agentDir: string = join(homedir(), ".pi", "agent")): string {
-	return join(agentDir, "pi-recall.json");
+	return join(agentDir, "pi-domain.json");
 }
 
 type Bounds = { min: number; max: number; int?: boolean };

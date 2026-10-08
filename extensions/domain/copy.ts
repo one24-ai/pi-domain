@@ -1,8 +1,8 @@
 /**
  * Copy a database through SQLite (VACUUM INTO), never by copying files.
  *
- * The database runs in WAL mode and other pi sessions may have it open, so copying recall.db alone
- * can lose the writes still sitting in recall.db-wal. VACUUM INTO reads one consistent snapshot,
+ * The database runs in WAL mode and other pi sessions may have it open, so copying domain.db alone
+ * can lose the writes still sitting in domain.db-wal. VACUUM INTO reads one consistent snapshot,
  * including the WAL. The source is opened read-only, so its contents never change. SQLite may
  * still create empty -wal and -shm files beside it (it does for any reader of a WAL database);
  * they hold no data of their own.

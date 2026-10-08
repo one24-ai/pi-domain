@@ -1,6 +1,6 @@
 /**
- * pi-recall's side of the optional pairing with pi-halo. Nothing here imports halo: halo, when it
- * is loaded, leaves a registry on globalThis, and pi-recall offers it three things through it.
+ * pi-domain's side of the optional pairing with pi-halo. Nothing here imports halo: halo, when it
+ * is loaded, leaves a registry on globalThis, and pi-domain offers it three things through it.
  *
  *  - Tool rows: halo-styled one-line rows for the memory tools, registered with an owner id so a
  *    /reload replaces them instead of adding more. If halo has not loaded yet they wait in halo's
@@ -11,7 +11,7 @@
  *    recalled against the budget, and the memories saved or changed in this session. Clicking one
  *    shows it in full.
  *
- * Without halo none of this runs and pi-recall draws its own rows.
+ * Without halo none of this runs and pi-domain draws its own rows.
  *
  * The protocol (pi-halo's README, "Adding a widget without depending on pi-halo" and "Tool rows
  * for your extension's tools"):
@@ -29,7 +29,7 @@ export const MEMORY_ICON = { nerd: "\u{F09D1}", plain: "#" };
 const REGISTRY = Symbol.for("pi-halo/registry");
 const PENDING_TOOL_ROWS = Symbol.for("pi-halo/pendingToolRows");
 const PLAIN_TYPES = Symbol.for("halo.plainMessageTypes");
-const OWNER = "pi-recall";
+const OWNER = "pi-domain";
 
 type Theme = { fg(color: string, text: string): string };
 type Result = { content?: Array<{ type: string; text?: string }>; details?: any };
@@ -189,7 +189,7 @@ export function registerSidebar(
 	return reg.register(
 		pi,
 		{
-			id: "pi-recall",
+			id: "pi-domain",
 			title: "Memory",
 			icon: MEMORY_ICON,
 			slots: ["sidebar"],

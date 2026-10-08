@@ -9,7 +9,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const entry = join(dirname(fileURLToPath(import.meta.url)), "..", "extensions", "recall", "index.ts");
+const entry = join(dirname(fileURLToPath(import.meta.url)), "..", "extensions", "domain", "index.ts");
 const mod = await import(entry);
 const tools = [];
 const pi = new Proxy({}, { get: (_, k) => (k === "registerTool" ? (t) => tools.push(t) : () => () => {}) });

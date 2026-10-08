@@ -9,7 +9,7 @@
  *  - without it: pi's standard boxed custom message, "[memory-recall] N memories recalled" with an
  *    expand hint.
  *
- * pi-recall does not depend on halo: see halo.ts for how it finds it.
+ * pi-domain does not depend on halo: see halo.ts for how it finds it.
  */
 
 import type { MessageRenderer, Theme } from "@earendil-works/pi-coding-agent";

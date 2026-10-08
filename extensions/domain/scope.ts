@@ -1,5 +1,5 @@
 /**
- * Scope resolution for pi-recall.
+ * Scope resolution for pi-domain.
  *
  * A memory belongs to a scope so that recall is relevant: notes about one repo
  * should not surface while working in another. Scopes are resolved from the

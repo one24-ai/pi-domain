@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, test } from "node:test";
 import { SessionManager } from "@earendil-works/pi-coding-agent";
-import { MemoryStore } from "../extensions/recall/store.ts";
+import { MemoryStore } from "../extensions/domain/store.ts";
 
 const REGISTRY = Symbol.for("pi-halo/registry");
 const PENDING = Symbol.for("pi-halo/pendingToolRows");
@@ -20,9 +20,9 @@ let dir: string;
 const saved: Record<string, string | undefined> = {};
 
 beforeEach(() => {
-	dir = mkdtempSync(join(tmpdir(), "pi-recall-ext-"));
-	for (const k of ["PI_RECALL_DB", "PI_CODING_AGENT_DIR"]) saved[k] = process.env[k];
-	process.env.PI_RECALL_DB = join(dir, "recall.db");
+	dir = mkdtempSync(join(tmpdir(), "pi-domain-ext-"));
+	for (const k of ["PI_DOMAIN_DB", "PI_CODING_AGENT_DIR"]) saved[k] = process.env[k];
+	process.env.PI_DOMAIN_DB = join(dir, "domain.db");
 	process.env.PI_CODING_AGENT_DIR = dir;
 	const g = globalThis as Record<symbol, unknown>;
 	delete g[REGISTRY];
@@ -85,7 +85,7 @@ function fakePi() {
 }
 
 async function load() {
-	const mod = await import(`../extensions/recall/index.ts?${Math.random()}`);
+	const mod = await import(`../extensions/domain/index.ts?${Math.random()}`);
 	const f = fakePi();
 	mod.default(f.pi);
 	return f;
@@ -94,7 +94,7 @@ async function load() {
 const scopeOf = () => `project:${dir.split("/").pop()}`;
 
 function seed(texts: Array<[string, Partial<{ pinned: boolean; global: boolean; kind: string }>?]>) {
-	const s = new MemoryStore(process.env.PI_RECALL_DB!);
+	const s = new MemoryStore(process.env.PI_DOMAIN_DB!);
 	const ids: number[] = [];
 	for (const [text, o = {}] of texts) ids.push(s.write({ scope: o.global ? "global" : scopeOf(), kind: (o.kind ?? "fact") as any, text, pinned: o.pinned }).row.id);
 	s.close();
@@ -167,7 +167,7 @@ test("moving to a branch without the recall brings one on the next prompt", asyn
 
 test("an empty recall is worked out once, and its notice given once", async () => {
 	seed([["x".repeat(2000), { pinned: true }]]);
-	writeFileSync(join(dir, "pi-recall.json"), JSON.stringify({ recall: { maxChars: 500, inlineChars: 10_000 } }));
+	writeFileSync(join(dir, "pi-domain.json"), JSON.stringify({ recall: { maxChars: 500, inlineChars: 10_000 } }));
 	const f = await load();
 	await f.emit("session_start", { reason: "startup" });
 	assert.equal((await f.prompt("one")).message, undefined);
@@ -181,9 +181,9 @@ test("an empty database recalls nothing", async () => {
 	assert.equal((await f.prompt("hi")).message, undefined);
 });
 
-test("the recall budget from pi-recall.json is respected", async () => {
+test("the recall budget from pi-domain.json is respected", async () => {
 	seed(Array.from({ length: 60 }, (_, i) => [`Memory ${i}: ${"some words ".repeat(20)}`, {}] as [string, {}]));
-	writeFileSync(join(dir, "pi-recall.json"), JSON.stringify({ recall: { maxChars: 1500 } }));
+	writeFileSync(join(dir, "pi-domain.json"), JSON.stringify({ recall: { maxChars: 1500 } }));
 	const f = await load();
 	await f.emit("session_start", { reason: "startup" });
 	const { message } = await f.prompt("hi");
@@ -193,7 +193,7 @@ test("the recall budget from pi-recall.json is respected", async () => {
 
 test("a memory matching the first prompt is listed even when it is not recent", async () => {
 	seed([["The flaky widget test needs TZ=UTC to pass.", {}], ...Array.from({ length: 40 }, (_, i) => [`Unrelated note ${i} ${"filler ".repeat(30)}`, {}] as [string, {}])]);
-	writeFileSync(join(dir, "pi-recall.json"), JSON.stringify({ recall: { maxChars: 1200 } }));
+	writeFileSync(join(dir, "pi-domain.json"), JSON.stringify({ recall: { maxChars: 1200 } }));
 	const f = await load();
 	await f.emit("session_start", { reason: "startup" });
 	assert.match((await f.prompt("the widget test is flaky again")).message.content, /TZ=UTC/);
@@ -244,7 +244,7 @@ test("memory_get stays under its size cap and names exactly what it returned", a
 });
 
 test("another project's memories cannot be read, changed or deleted", async () => {
-	const s = new MemoryStore(process.env.PI_RECALL_DB!);
+	const s = new MemoryStore(process.env.PI_DOMAIN_DB!);
 	const other = s.write({ scope: "project:elsewhere", kind: "fact", text: "secret of another project" }).row;
 	s.close();
 	const f = await load();
@@ -252,7 +252,7 @@ test("another project's memories cannot be read, changed or deleted", async () =
 	assert.ok(!(await f.call("memory_get", { ids: [other.id] })).content[0].text.includes("secret"));
 	await assert.rejects(() => f.call("memory_update", { id: other.id, text: "changed" }), /No memory/);
 	await assert.rejects(() => f.call("memory_forget", { id: other.id, reason: "x" }), /No memory/);
-	const check = new MemoryStore(process.env.PI_RECALL_DB!);
+	const check = new MemoryStore(process.env.PI_DOMAIN_DB!);
 	assert.equal(check.get(other.id)?.text, "secret of another project");
 	check.close();
 });
@@ -281,7 +281,7 @@ test("without halo: no widget, rows queued for halo, the recall type marked plai
 	await f.emit("session_start", { reason: "startup" });
 	const g = globalThis as Record<symbol, any>;
 	assert.equal(g[PENDING]?.length, 1);
-	assert.equal(g[PENDING][0].id, "pi-recall");
+	assert.equal(g[PENDING][0].id, "pi-domain");
 	assert.ok(g[PLAIN].has("memory-recall"));
 });
 
@@ -297,7 +297,7 @@ test("with halo: the sidebar follows recall, this session's memories, resume and
 	};
 	const f = await load();
 	await f.emit("session_start", { reason: "startup" });
-	assert.equal(spec.id, "pi-recall");
+	assert.equal(spec.id, "pi-domain");
 	const root = f.sm.appendMessage({ role: "user", content: "start", timestamp: 1 } as any);
 	await f.prompt("hi");
 	assert.match(spec.render({}).text, /^2\/2 · /);
@@ -316,8 +316,8 @@ test("with halo: the sidebar follows recall, this session's memories, resume and
 });
 
 test("a malformed settings file is reported and the defaults used", async () => {
-	writeFileSync(join(dir, "pi-recall.json"), "{nope");
+	writeFileSync(join(dir, "pi-domain.json"), "{nope");
 	const f = await load();
 	await f.emit("session_start", { reason: "startup" });
-	assert.ok(f.notes.some((n) => /ignoring .*pi-recall\.json/.test(n)));
+	assert.ok(f.notes.some((n) => /ignoring .*pi-domain\.json/.test(n)));
 });

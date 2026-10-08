@@ -5,8 +5,8 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { haloLoaded } from "../extensions/recall/halo.ts";
-import { plainRecallRow, recallRenderer, RECALL_ICON } from "../extensions/recall/recall-row.ts";
+import { haloLoaded } from "../extensions/domain/halo.ts";
+import { plainRecallRow, recallRenderer, RECALL_ICON } from "../extensions/domain/recall-row.ts";
 
 const theme = {
 	fg: (_c: string, t: string) => t,

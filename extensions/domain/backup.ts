@@ -3,7 +3,7 @@
  *
  * A snapshot is taken through SQLite (see copy.ts), so it is consistent even while sessions
  * have the database open, and it is checked before it counts. Files are named
- * recall-YYYYMMDD-HHMMSS.db in local time (with -1, -2 ... if two land in the same second).
+ * domain-YYYYMMDD-HHMMSS.db in local time (with -1, -2 ... if two land in the same second).
  *
  * Only files matching that name are ever listed or removed. Anything else in the directory is left
  * alone, so pointing the backup directory somewhere shared cannot delete unrelated files.
@@ -18,14 +18,14 @@ import { type CopyReport, copyDb } from "./copy.ts";
 /** How many snapshots are kept; older ones are removed after a new one succeeds. */
 export const DEFAULT_KEEP = 20;
 
-const NAME = /^recall-(\d{8}-\d{6})(?:-(\d+))?\.db$/;
+const NAME = /^domain-(\d{8}-\d{6})(?:-(\d+))?\.db$/;
 
 const pad = (n: number, width = 2) => String(n).padStart(width, "0");
 
-/** recall-YYYYMMDD-HHMMSS.db in local time; `n` > 0 adds a -n suffix. */
+/** domain-YYYYMMDD-HHMMSS.db in local time; `n` > 0 adds a -n suffix. */
 export function backupName(now: Date, n = 0): string {
 	const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-	return `recall-${stamp}${n > 0 ? `-${n}` : ""}.db`;
+	return `domain-${stamp}${n > 0 ? `-${n}` : ""}.db`;
 }
 
 /** Snapshot file names in `dir`, newest first. A missing directory is an empty list. */

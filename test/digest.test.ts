@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildDigest, digestLine, type DigestOptions, firstSentence } from "../extensions/recall/digest.ts";
-import type { MemoryRow } from "../extensions/recall/store.ts";
+import { buildDigest, digestLine, type DigestOptions, firstSentence } from "../extensions/domain/digest.ts";
+import type { MemoryRow } from "../extensions/domain/store.ts";
 
 let nextId = 1;
 function row(text: string, o: Partial<MemoryRow> = {}): MemoryRow {

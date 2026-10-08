@@ -10,11 +10,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { test } from "node:test";
-import { copyDb } from "../extensions/recall/copy.ts";
-import { MemoryStore } from "../extensions/recall/store.ts";
+import { copyDb } from "../extensions/domain/copy.ts";
+import { MemoryStore } from "../extensions/domain/store.ts";
 
 function temp(): string {
-	return mkdtempSync(join(tmpdir(), "pi-recall-copy-"));
+	return mkdtempSync(join(tmpdir(), "pi-domain-copy-"));
 }
 
 /** A WAL-mode database with rows that have not been checkpointed into the main file. */
@@ -28,7 +28,7 @@ test("copies every memory, including writes still in the WAL of a database that 
 	const dir = temp();
 	try {
 		const from = join(dir, "old", "memory.db");
-		const to = join(dir, "new", "sub", "recall.db");
+		const to = join(dir, "new", "sub", "domain.db");
 		const open = seed(from, ["one", "two", "three"]); // left open: a live session
 		assert.ok(existsSync(`${from}-wal`), "the writes are in the WAL");
 		const r = copyDb(from, to);
@@ -49,7 +49,7 @@ test("leaves the source's contents untouched", () => {
 		seed(from, ["a"]).close();
 		const hash = () => createHash("sha256").update(readFileSync(from)).digest("hex");
 		const before = hash();
-		copyDb(from, join(dir, "x", "recall.db"));
+		copyDb(from, join(dir, "x", "domain.db"));
 		assert.equal(hash(), before, "the main file is byte-identical");
 		assert.equal(new MemoryStore(from).recall(["global"], 10).length, 1, "and still readable");
 	} finally {
@@ -62,7 +62,7 @@ test("the copy keeps the schema version and the search index", () => {
 	try {
 		const from = join(dir, "memory.db");
 		seed(from, ["findable needle"]).close();
-		const to = join(dir, "recall.db");
+		const to = join(dir, "domain.db");
 		const r = copyDb(from, to);
 		assert.equal(r.userVersion, 1);
 		const copy = new MemoryStore(to);
@@ -78,7 +78,7 @@ test("refuses to overwrite an existing destination and leaves it alone", () => {
 	try {
 		const from = join(dir, "memory.db");
 		seed(from, ["a"]).close();
-		const to = join(dir, "recall.db");
+		const to = join(dir, "domain.db");
 		writeFileSync(to, "not a database");
 		assert.throws(() => copyDb(from, to), /refusing to overwrite/);
 		assert.equal(statSync(to).size, "not a database".length);
@@ -90,7 +90,7 @@ test("refuses to overwrite an existing destination and leaves it alone", () => {
 test("a missing source is an error and creates nothing", () => {
 	const dir = temp();
 	try {
-		assert.throws(() => copyDb(join(dir, "none.db"), join(dir, "out", "recall.db")), /no database/);
+		assert.throws(() => copyDb(join(dir, "none.db"), join(dir, "out", "domain.db")), /no database/);
 		assert.ok(!existsSync(join(dir, "out")));
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
@@ -102,8 +102,8 @@ test("a source that is not a database fails and leaves no destination behind", (
 	try {
 		const from = join(dir, "bad.db");
 		writeFileSync(from, "garbage".repeat(200));
-		assert.throws(() => copyDb(from, join(dir, "recall.db")));
-		assert.ok(!existsSync(join(dir, "recall.db")));
+		assert.throws(() => copyDb(from, join(dir, "domain.db")));
+		assert.ok(!existsSync(join(dir, "domain.db")));
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

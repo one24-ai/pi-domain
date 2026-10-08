@@ -1,5 +1,5 @@
 /**
- * SQLite-backed memory store for pi-recall.
+ * SQLite-backed memory store for pi-domain.
  *
  * Deliberately free of any pi imports so it can be exercised standalone with
  * `node --experimental-strip-types store.test.ts`.
