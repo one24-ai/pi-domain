@@ -1,5 +1,5 @@
 {
-  "name": "pi-recall",
+  "name": "@one24-ai/pi-recall",
   "version": "0.1.0",
   "description": "Persistent memory for pi: a local SQLite store with tools for the model, a short budgeted recall at the start of each session, compaction summaries kept as searchable notes, daily snapshots, and optional pi-halo rows and sidebar.",
   "type": "module",

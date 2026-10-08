@@ -5,7 +5,7 @@ Persistent memory for [pi](https://pi.dev). The model saves decisions, preferenc
 Requires pi 1.1 and Node.js 22.19 or later (for `node:sqlite`).
 
 ```bash
-pi install npm:pi-recall@0.1.0                        # from npm, pinned
+pi install npm:@one24-ai/pi-recall@0.1.0                        # from npm, pinned
 pi install git:github.com/one24-ai/pi-recall@v0.1.0   # from git, pinned to a tag
 pi install /path/to/pi-recall                         # a local checkout
 ```

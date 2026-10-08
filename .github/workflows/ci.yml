@@ -27,5 +27,5 @@ jobs:
       - name: The packed tarball has the extension and nothing else it should not
         run: |
           pnpm pack
-          tar tzf pi-recall-*.tgz | grep -q '^package/extensions/recall/index.ts$'
-          ! tar tzf pi-recall-*.tgz | grep -E '^package/(test|scripts|\.github)/'
+          tar tzf one24-ai-pi-recall-*.tgz | grep -q '^package/extensions/recall/index.ts$'
+          ! tar tzf one24-ai-pi-recall-*.tgz | grep -E '^package/(test|scripts|\.github)/'
