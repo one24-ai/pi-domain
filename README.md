@@ -7,7 +7,7 @@ Named after the Domain, the Forerunners' store of knowledge and ancestral memory
 Requires pi 1.1 and Node.js 22.19 or later (for `node:sqlite`).
 
 ```bash
-pi install npm:@one24-ai/pi-domain@0.1.0                        # from npm, pinned
+pi install npm:pi-domain@0.1.0                        # from npm, pinned
 pi install git:github.com/one24-ai/pi-domain@v0.1.0   # from git, pinned to a tag
 pi install /path/to/pi-domain                         # a local checkout
 ```

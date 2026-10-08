@@ -4,9 +4,9 @@ Every release is a commit on `main` with a `vX.Y.Z` tag, built and published by 
 
 ## Once
 
-The package is published as `@one24-ai/pi-domain` (the unscoped name `pi-domain` is refused by npm as too similar to an existing package). On npmjs.com, add a trusted publisher for `@one24-ai/pi-domain`: repository `one24-ai/pi-domain`, workflow `release.yml`, environment `npm`. In the GitHub repository, create the `npm` environment (Settings, Environments). No npm token is stored anywhere.
+On npmjs.com, add a trusted publisher for `pi-domain`: repository `one24-ai/pi-domain`, workflow `release.yml`, environment `npm`. In the GitHub repository, create the `npm` environment (Settings, Environments). No npm token is stored anywhere.
 
-The first version has to exist before a trusted publisher can be added, so publish the first version once by hand from a clean checkout of the tag (`npm publish`, signed in with `npm login`; a scoped package is public only with `publishConfig.access`, which `package.json` sets), then add the trusted publisher and use CI from the next release on.
+The first version has to exist before a trusted publisher can be added, so publish the first version once by hand from a clean checkout of the tag (`npm publish`, signed in with `npm login`), then add the trusted publisher and use CI from the next release on.
 
 ## Each release
 
