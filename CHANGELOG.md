@@ -4,6 +4,12 @@ All notable changes to pi-domain are listed here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.1.1]
+
+### Changed
+
+- Published through GitHub Actions with npm trusted publishing and provenance. No code changes since 0.1.0.
+
 ## [0.1.0]
 
 First public release.
@@ -20,5 +26,6 @@ First public release.
 - Settings in `pi-domain.json`.
 - Optional pi-halo pairing: halo tool rows, a plain recall row and a sidebar section, through halo's globals only.
 
-[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/one24-ai/pi-domain/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/one24-ai/pi-domain/releases/tag/v0.1.0
