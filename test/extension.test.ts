@@ -618,3 +618,26 @@ test("a relative or symlinked project path files under the repository's own name
 	assert.equal((await f.call("memory_write", { text: "Via a symlink.", kind: "fact", project: join(dir, "k") })).details.scope, "project:kiln");
 	assert.equal((await f.call("memory_write", { text: "Via a relative path.", kind: "fact", project: "../git/kiln" })).details.scope, "project:kiln");
 });
+
+test("compaction summaries are not saved by default", async () => {
+	const f = await load();
+	await f.emit("session_start", { reason: "startup" });
+	await f.emit("session_compact", { compactionEntry: { summary: "## Goal\nA long session." }, reason: "threshold" });
+	const s = new MemoryStore(process.env.PI_DOMAIN_DB!);
+	assert.equal(s.search({ scopes: s.scopes(), kinds: ["summary"], limit: 10 }).length, 0);
+	s.close();
+});
+
+test("with summaries.save on, a compaction summary is kept as a summary memory, cut at summaries.maxChars", async () => {
+	writeFileSync(join(dir, "pi-domain.json"), JSON.stringify({ summaries: { save: true, maxChars: 300 } }));
+	const f = await load();
+	await f.emit("session_start", { reason: "startup" });
+	await f.emit("session_compact", { compactionEntry: { summary: `## Goal\n${"x".repeat(1000)}` }, reason: "threshold" });
+	const s = new MemoryStore(process.env.PI_DOMAIN_DB!);
+	const rows = s.search({ scopes: s.scopes(), kinds: ["summary"], limit: 10 });
+	assert.equal(rows.length, 1);
+	assert.equal(rows[0]!.scope, scopeOf());
+	assert.equal(rows[0]!.text.length, 301, "cut, with an ellipsis");
+	assert.deepEqual(rows[0]!.tags, ["compaction", "threshold"]);
+	s.close();
+});

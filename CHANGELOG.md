@@ -4,6 +4,12 @@ All notable changes to pi-domain are listed here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Changed
+
+- Compaction summaries are no longer saved as memories by default (`summaries.save` now defaults to `false`). A stored summary was a cut-down snapshot of one moment that went stale, and pi already keeps every summary in the session file. Set `summaries.save` to `true` in `pi-domain.json` to keep the old behaviour. Summaries already saved stay, and `/memory-tidy` still offers to delete old ones. Breaking for anyone relying on the default.
+
 ## [0.2.0]
 
 ### Added
@@ -38,7 +44,8 @@ First public release.
 - Settings in `pi-domain.json`.
 - Optional pi-halo pairing: halo tool rows, a plain recall row and a sidebar section, through halo's globals only.
 
-[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/one24-ai/pi-domain/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/one24-ai/pi-domain/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/one24-ai/pi-domain/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/one24-ai/pi-domain/releases/tag/v0.1.0

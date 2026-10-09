@@ -1,6 +1,6 @@
 {
   "name": "pi-domain",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Persistent memory for pi: a local SQLite store with tools for the model, a short budgeted recall at the start of each session, compaction summaries kept as searchable notes, daily snapshots, and optional pi-halo rows and sidebar.",
   "type": "module",
   "license": "MIT",

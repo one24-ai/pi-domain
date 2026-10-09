@@ -7,7 +7,8 @@
  *    gets a short index of memories within a character budget: pinned ones, ones related to the
  *    prompt, then recent ones. Long memories are listed by their first sentence; memory_get gives
  *    the rest.
- *  - Compaction summaries are saved as searchable notes; a snapshot of the database is taken daily.
+ *  - With summaries.save on, compaction summaries are kept as searchable notes; a snapshot of the
+ *    database is taken daily.
  *  - Commands: /memory, /memory-forget, /memory-pin, /memory-tidy, /memory-backup, /memory-restore.
  *  - With pi-halo loaded: halo-styled tool rows and a sidebar section (see halo.ts). Optional.
  *
@@ -487,7 +488,7 @@ export default function (pi: ExtensionAPI) {
 		return { message: { customType: RECALL_TYPE, content: digest.text, display: true, details } };
 	});
 
-	// Compaction distils the conversation into a summary; keeping it makes long sessions searchable.
+	// Compaction distils the conversation into a summary. Kept only when summaries.save is on (off by default).
 	pi.on("session_compact", (event, ctx) => {
 		// The recall may be in the summarised part; the next prompt checks again.
 		resetRecall();

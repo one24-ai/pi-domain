@@ -12,10 +12,11 @@ test("no file: the defaults, and no error", () => {
 });
 
 test("values are taken, clamped and type-checked one by one", () => {
+	assert.equal(DEFAULT_SETTINGS.summaries.save, false, "summaries are not saved unless asked for");
 	const s = parseSettings({
 		recall: { maxChars: 2500, maxItems: 1000, globalShare: 2, inlineChars: "big" },
 		write: { warnChars: -5 },
-		summaries: { save: false, keep: 1.6 },
+		summaries: { save: true, keep: 1.6 },
 		backup: { everyHours: 0 },
 		other: 1,
 	});
@@ -24,7 +25,7 @@ test("values are taken, clamped and type-checked one by one", () => {
 	assert.equal(s.recall.globalShare, 1, "clamped to 1");
 	assert.equal(s.recall.inlineChars, DEFAULT_SETTINGS.recall.inlineChars, "wrong type: default");
 	assert.equal(s.write.warnChars, 0, "clamped to 0, which turns the warning off");
-	assert.equal(s.summaries.save, false);
+	assert.equal(s.summaries.save, true);
 	assert.equal(s.summaries.keep, 2, "rounded");
 	assert.equal(s.summaries.maxChars, DEFAULT_SETTINGS.summaries.maxChars, "missing: default");
 	assert.equal(s.backup.everyHours, 0);

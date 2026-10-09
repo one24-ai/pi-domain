@@ -7,8 +7,8 @@ Named after the Domain, the Forerunners' store of knowledge and ancestral memory
 Requires pi 1.1 and Node.js 22.19 or later (for `node:sqlite`).
 
 ```bash
-pi install npm:pi-domain@0.2.0                        # from npm, pinned
-pi install git:github.com/one24-ai/pi-domain@v0.2.0   # from git, pinned to a tag
+pi install npm:pi-domain@0.3.0                        # from npm, pinned
+pi install git:github.com/one24-ai/pi-domain@v0.3.0   # from git, pinned to a tag
 pi install /path/to/pi-domain                         # a local checkout
 ```
 
@@ -41,7 +41,7 @@ Memories from earlier sessions (project:my-app and global). Lines ending in [N c
 - A memory up to 300 characters is shown whole. A longer one is shown by its first sentence and its length, so the model can fetch it when it matters.
 - Global memories may use half the budget at first, then whatever the project left unused, so a long global list never crowds out the project.
 - It is sent once per conversation. Reloading, resuming or forking a session does not add it again. After compaction has summarised it away, the next prompt brings a fresh one.
-- Compaction summaries are never recalled. They are kept as `summary` memories you can search.
+- Compaction summaries are not saved unless you turn on `summaries.save`, and are never recalled. pi already keeps every summary in the session file (`/resume` brings it back); durable points belong in `memory_write`.
 
 **Scopes.** A memory belongs to the git repository it was saved in (`project:<repo name>`, the directory name outside a repository) or to `global`. A session sees its project and global, nothing else.
 
@@ -75,7 +75,7 @@ Optional. Put any of these in `~/.pi/agent/pi-domain.json` (or `$PI_CODING_AGENT
 {
   "recall": { "maxChars": 4000, "maxItems": 20, "globalShare": 0.5, "inlineChars": 300 },
   "write": { "warnChars": 600 },
-  "summaries": { "save": true, "maxChars": 4000, "keep": 3 },
+  "summaries": { "save": false, "maxChars": 4000, "keep": 3 },
   "backup": { "everyHours": 24, "keep": 20 }
 }
 ```
@@ -87,7 +87,7 @@ Optional. Put any of these in `~/.pi/agent/pi-domain.json` (or `$PI_CODING_AGENT
 | `recall.globalShare` | 0.5 | Share of the budget global memories get before the project has had its turn |
 | `recall.inlineChars` | 300 | Memories up to this long are shown whole, in recall and in search results |
 | `write.warnChars` | 600 | Saving longer text gets a note; `/memory-tidy` suggests shortening. 0 turns both off |
-| `summaries.save` | true | Keep compaction summaries as `summary` memories |
+| `summaries.save` | false | Keep compaction summaries as searchable `summary` memories |
 | `summaries.maxChars` | 4000 | Longer summaries are cut |
 | `summaries.keep` | 3 | `/memory-tidy` suggests deleting older summaries beyond this many per project |
 | `backup.everyHours` | 24 | Hours between automatic snapshots. 0 turns them off |

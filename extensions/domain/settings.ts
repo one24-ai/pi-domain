@@ -6,7 +6,7 @@
  *   {
  *     "recall":    { "maxChars": 4000, "maxItems": 20, "globalShare": 0.5, "inlineChars": 300 },
  *     "write":     { "warnChars": 600 },
- *     "summaries": { "save": true, "maxChars": 4000, "keep": 3 },
+ *     "summaries": { "save": false, "maxChars": 4000, "keep": 3 },
  *     "backup":    { "everyHours": 24, "keep": 20 }
  *   }
  *
@@ -37,7 +37,11 @@ export interface RecallSettings {
 		warnChars: number;
 	};
 	summaries: {
-		/** Save each compaction summary as a "summary" memory (searchable, never recalled). */
+		/**
+		 * Save each compaction summary as a "summary" memory (searchable, never recalled). Off by
+		 * default: pi keeps every summary in the session file already, and a stored copy is a cut-down
+		 * snapshot of one moment that goes stale; durable points belong in memory_write.
+		 */
 		save: boolean;
 		maxChars: number;
 		/** /memory-tidy suggests deleting summaries beyond the newest this many per project. */
@@ -54,7 +58,7 @@ export interface RecallSettings {
 export const DEFAULT_SETTINGS: RecallSettings = {
 	recall: { maxChars: 4000, maxItems: 20, globalShare: 0.5, inlineChars: 300 },
 	write: { warnChars: 600 },
-	summaries: { save: true, maxChars: 4000, keep: 3 },
+	summaries: { save: false, maxChars: 4000, keep: 3 },
 	backup: { everyHours: 24, keep: 20 },
 };
 
