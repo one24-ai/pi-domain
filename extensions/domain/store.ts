@@ -612,6 +612,21 @@ export class MemoryStore {
 		).map(toRow);
 	}
 
+	/** Every memory in `scopes`, newest first, with no limit (for review commands that must not skip rows). */
+	inScopes(scopes: string[]): MemoryRow[] {
+		if (scopes.length === 0) return [];
+		return (
+			this.db
+				.prepare(`SELECT * FROM memories WHERE scope IN (${scopes.map(() => "?").join(", ")}) ORDER BY updated_at DESC, id DESC`)
+				.all(...scopes) as Record<string, unknown>[]
+		).map(toRow);
+	}
+
+	/** Every scope that holds at least one memory. */
+	scopes(): string[] {
+		return (this.db.prepare("SELECT DISTINCT scope FROM memories ORDER BY scope").all() as { scope: string }[]).map((r) => r.scope);
+	}
+
 	/** Several rows by id, in the order given; ids that do not exist are left out. */
 	getMany(ids: number[]): MemoryRow[] {
 		return ids.map((id) => this.get(id)).filter((r): r is MemoryRow => r !== undefined);

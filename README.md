@@ -7,8 +7,8 @@ Named after the Domain, the Forerunners' store of knowledge and ancestral memory
 Requires pi 1.1 and Node.js 22.19 or later (for `node:sqlite`).
 
 ```bash
-pi install npm:pi-domain@0.1.0                        # from npm, pinned
-pi install git:github.com/one24-ai/pi-domain@v0.1.0   # from git, pinned to a tag
+pi install npm:pi-domain@0.2.0                        # from npm, pinned
+pi install git:github.com/one24-ai/pi-domain@v0.2.0   # from git, pinned to a tag
 pi install /path/to/pi-domain                         # a local checkout
 ```
 
@@ -18,8 +18,8 @@ pi install /path/to/pi-domain                         # a local checkout
 
 | Tool | What it does |
 |---|---|
-| `memory_write` | Save a memory: `decision`, `preference`, `fact`, `gotcha`. Project scope by default, `global` for facts that hold everywhere, `pinned` to always recall it. Saving the same text again refreshes it instead of adding a copy. Text over 600 characters gets a note asking for the key point first. |
-| `memory_update` | Change a memory by id: text, kind, tags, pin or scope. Used instead of piling up corrections. |
+| `memory_write` | Save a memory: `decision`, `preference`, `fact`, `gotcha`. Project scope by default, `global` for facts that hold everywhere, `project` for another project's (see below), `pinned` to always recall it. Saving the same text again refreshes it instead of adding a copy. Text over 600 characters gets a note asking for the key point first. |
+| `memory_update` | Change a memory by id: text, kind, tags, pin, or move it (`global`, or `project`; `in` reaches a memory in another project). Used instead of piling up corrections. |
 | `memory_search` | Full-text search of this project's and global memories. Long ones come back as their first sentence and length. |
 | `memory_get` | The full text of memories by id. |
 | `memory_forget` | Delete a memory by id. You confirm every deletion; without an interactive UI nothing is deleted. |
@@ -45,6 +45,15 @@ Memories from earlier sessions (project:my-app and global). Lines ending in [N c
 
 **Scopes.** A memory belongs to the git repository it was saved in (`project:<repo name>`, the directory name outside a repository) or to `global`. A session sees its project and global, nothing else.
 
+**Work for another project.** A session started in a folder that is not the project, such as your home directory, would file everything under that folder. Every tool that reads or writes takes an optional `project`, so the model can say where a memory belongs:
+
+- `project: "kiln"` names a project that already has memories (case does not matter, and `project:kiln` works too).
+- `project: "~/git/kiln"` names a directory, which is how a project with no memories yet gets its first one. The scope is that repository's name, exactly as if the session had started inside it. Only the name form is protected against typos: any existing directory can start a scope, and a directory that is not a git repository files under its folder name.
+- A name that matches nothing is refused, with the known projects listed, so a typo cannot start a new scope. `global: true` and `project` together are refused too.
+- `memory_search` and `memory_get` read from that project, and `memory_update` and `memory_forget` can reach its memories. Without `project`, another project's memories stay out of reach.
+- `memory_update` moves a memory only when you say so: `project` is the destination (and `global: true` the other one), and `in` names the project the memory is in now, to reach it from another folder. The reply says where it came from.
+- When a memory lands somewhere other than the folder's project, the tool's reply says so.
+
 **Snapshots.** At session start, a snapshot of the database is taken when the newest one is a day old. `/memory-backup` takes one now and `/memory-restore` puts one back (after saving the current state, so a restore can be undone). The newest 20 are kept.
 
 ## Commands
@@ -54,7 +63,7 @@ Memories from earlier sessions (project:my-app and global). Lines ending in [N c
 | `/memory [words]` | List or search memories, with counts per scope and the size of this session's recall |
 | `/memory-pin <id>` | Pin or unpin a memory |
 | `/memory-forget <id>` | Delete a memory, after you confirm |
-| `/memory-tidy` | Step through cleanup suggestions: memories that say they supersede others, near-duplicates, "Extends #N" notes to fold in, memories over 600 characters, and old compaction summaries. You choose for each: delete, keep, or ask the agent to merge or shorten |
+| `/memory-tidy [all]` | Step through cleanup suggestions, with a count first: memories filed under a folder that name a project (offered a move to it, or to global), memories that say they supersede others, near-duplicates, "Extends #N" notes to fold in, memories over 600 characters, and old compaction summaries. You choose for each: move, delete, keep, or ask the agent to merge or shorten. It covers this project and global; `all` covers every project |
 | `/memory-backup` | Save a checked snapshot now |
 | `/memory-restore [name]` | Replace all memories with a snapshot, after you confirm |
 
@@ -84,11 +93,11 @@ Optional. Put any of these in `~/.pi/agent/pi-domain.json` (or `$PI_CODING_AGENT
 | `backup.everyHours` | 24 | Hours between automatic snapshots. 0 turns them off |
 | `backup.keep` | 20 | Snapshots kept |
 
-The database is `$XDG_DATA_HOME/pi-domain/domain.db`, else `~/.local/share/pi-domain/domain.db`, with snapshots in `backups/` beside it. `PI_DOMAIN_DB=/path/to/file.db` uses another file (its snapshots go beside it too).
+The database is `$XDG_DATA_HOME/pi-domain/domain.db`, else `~/.local/share/pi-domain/domain.db`, with snapshots in `backups/` beside it. `PI_DOMAIN_DB=/path/to/file.db` uses another file (its snapshots go beside it too). `/memory-tidy` finds repositories to move memories into under `~/git` (one and two levels down); `PI_DOMAIN_REPOS=/path/a:/path/b` looks there instead.
 
 ## What it costs
 
-The tools add about 2,750 characters (roughly 700 tokens) to every request: their names, descriptions and parameters (`node --experimental-strip-types scripts/measure-tools.mjs` prints the figure). Recall adds up to `recall.maxChars` once per conversation. Search results are capped at 30 memories and shortened; `memory_get` returns at most 16,000 characters per call.
+The tools add about 3,300 characters (roughly 800 tokens) to every request: their names, descriptions and parameters (`node --experimental-strip-types scripts/measure-tools.mjs` prints the figure). Recall adds up to `recall.maxChars` once per conversation. Search results are capped at 30 memories and shortened; `memory_get` returns at most 16,000 characters per call.
 
 ## Privacy
 

@@ -4,6 +4,18 @@ All notable changes to pi-domain are listed here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+## [0.2.0]
+
+### Added
+
+- An optional `project` argument on `memory_write`, `memory_update`, `memory_search`, `memory_get` and `memory_forget`, for work done from a folder that is not the project (a home folder, a scratch folder). It takes the name of a project that has memories, or a directory; a name that matches nothing is refused with the known projects listed. `memory_update` moves a memory with `project` (or `global`) and reaches one in another project with `in`, never moving it by accident; replies say when a memory was filed outside the folder's project.
+- `/memory-tidy` offers to move memories filed under a folder that name exactly one existing project (and no removed or renamed one), or to make them global. `/memory-tidy all` covers every project, and the command starts with a count of what it found and ends with what it did.
+- `PI_DOMAIN_REPOS` sets where `/memory-tidy` looks for repositories (default `~/git`).
+
+### Changed
+
+- The tool definitions grew from about 2,750 to 3,300 characters for the `project` argument.
+
 ## [0.1.1]
 
 ### Changed
@@ -26,6 +38,7 @@ First public release.
 - Settings in `pi-domain.json`.
 - Optional pi-halo pairing: halo tool rows, a plain recall row and a sidebar section, through halo's globals only.
 
-[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/one24-ai/pi-domain/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/one24-ai/pi-domain/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/one24-ai/pi-domain/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/one24-ai/pi-domain/releases/tag/v0.1.0

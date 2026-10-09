@@ -26,7 +26,8 @@ import { haloLoaded, markPlainMessage, offerToolRows, registerSidebar, type Side
 import { backupDirFor, type DbLocation, resolveDb } from "./paths.ts";
 import { recallRenderer } from "./recall-row.ts";
 import { findSnapshot, listSnapshots, restoreSnapshot, snapshotLabel } from "./restore.ts";
-import { GLOBAL_SCOPE, resolveProjectScope, resolveReadScopes } from "./scope.ts";
+import { defaultRepoRoots, findRepos, GLOBAL_SCOPE, isInGitRepo, resolveProject, resolveProjectScope, resolveReadScopes } from "./scope.ts";
+import { findMisfiled } from "./misfiled.ts";
 import { DEFAULT_SETTINGS, loadSettings, type RecallSettings, settingsPath } from "./settings.ts";
 import { MEMORY_KINDS, type MemoryKind, type MemoryRow, MemoryStore } from "./store.ts";
 
@@ -114,15 +115,49 @@ export default function (pi: ExtensionAPI) {
 
 	const location = (): DbLocation => (where ??= resolveDb());
 	const openStore = (): MemoryStore => (store ??= new MemoryStore(location().path));
-	const writeScope = (ctx: ExtensionContext, global: boolean | undefined) => (global ? GLOBAL_SCOPE : resolveProjectScope(ctx.cwd));
 
-	/** A memory the current project may see, or an error naming where it looked. */
-	function readable(ctx: ExtensionContext, id: number): MemoryRow {
+	/**
+	 * The scope a project argument names, for work done from a folder that is not the project.
+	 * Throws with the reason when it names nothing real, so a typo never starts a new scope.
+	 */
+	function projectScope(ctx: ExtensionContext, project: string): string {
+		const r = resolveProject(project, ctx.cwd, openStore().scopes());
+		if ("error" in r) throw new Error(r.error);
+		return r.scope;
+	}
+
+	/** Where a write goes: global, the named project, or the project of the current folder. */
+	function writeScope(ctx: ExtensionContext, global: boolean | undefined, project?: string): string {
+		if (global && project) throw new Error("pass either global or project, not both");
+		if (global) return GLOBAL_SCOPE;
+		return project ? projectScope(ctx, project) : resolveProjectScope(ctx.cwd);
+	}
+
+	/** Scopes a read covers: this folder's project and global, plus the named project when there is one. */
+	function readScopes(ctx: ExtensionContext, project?: string): string[] {
+		const own = resolveReadScopes(ctx.cwd);
+		return project ? [...new Set([projectScope(ctx, project), ...own])] : own;
+	}
+
+	/**
+	 * A memory the session may see, or an error. That is this folder's project and global, plus the
+	 * named project when there is one (so a memory can be reached in another project, or moved from
+	 * this folder's project into it).
+	 */
+	function readable(ctx: ExtensionContext, id: number, project?: string): MemoryRow {
 		const row = openStore().get(id);
-		const scopes = resolveReadScopes(ctx.cwd);
+		const scopes = readScopes(ctx, project);
 		if (!row || !scopes.includes(row.scope)) throw new Error(`No memory #${id} in ${scopes.join(" or ")}`);
 		return row;
 	}
+
+	/** A note for the model when it saved into a project other than the folder's: where it went. */
+	function whereNote(ctx: ExtensionContext, scope: string): string {
+		return scope === GLOBAL_SCOPE || scope === resolveProjectScope(ctx.cwd) ? "" : `\nFiled under ${scope}, not this folder's project.`;
+	}
+
+	/** The optional project argument shared by the tools: a project that is not this folder's. */
+	const projectArg = () => Type.Optional(Type.String({ description: "Another project: name or directory" }));
 
 	function touch(row: MemoryRow) {
 		side.touched = [row, ...side.touched.filter((r) => r.id !== row.id)];
@@ -145,6 +180,7 @@ export default function (pi: ExtensionAPI) {
 		promptSnippet: "memory_write: save a decision, preference, fact or gotcha for later sessions",
 		promptGuidelines: [
 			"Save memories for durable decisions, preferences and gotchas, not task progress. One point per memory, key point first, readable out of context.",
+			"If a memory is about another project than this folder's, set project.",
 		],
 		parameters: Type.Object({
 			text: Type.String({ description: "The memory: one point, key point first." }),
@@ -152,13 +188,14 @@ export default function (pi: ExtensionAPI) {
 			tags: Type.Optional(Type.Array(Type.String())),
 			pinned: Type.Optional(Type.Boolean({ description: "Always recall it." })),
 			global: Type.Optional(Type.Boolean({ description: "For every project." })),
+			project: projectArg(),
 		}),
 		annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
 		// Writes share the connection; one at a time keeps the duplicate check honest.
 		executionMode: "sequential",
 		async execute(_id, params, _signal, _onUpdate, ctx) {
 			const result = openStore().write({
-				scope: writeScope(ctx, params.global),
+				scope: writeScope(ctx, params.global, params.project),
 				kind: params.kind as MemoryKind,
 				text: params.text,
 				tags: params.tags,
@@ -166,11 +203,12 @@ export default function (pi: ExtensionAPI) {
 				sessionId: ctx.sessionManager.getSessionId() ?? null,
 			});
 			touch(result.row);
-			const note = lengthNote(params.text, settings.write.warnChars, settings.recall.inlineChars);
+			const lenNote = lengthNote(params.text, settings.write.warnChars, settings.recall.inlineChars);
+			const note = lenNote + whereNote(ctx, result.row.scope);
 			const verb = result.deduplicated ? "Refreshed existing memory" : "Saved memory";
 			return {
 				content: [{ type: "text", text: `${verb} ${formatRow(result.row)}${note}` }],
-				details: { id: result.row.id, scope: result.row.scope, deduplicated: result.deduplicated, long: note !== "" },
+				details: { id: result.row.id, scope: result.row.scope, deduplicated: result.deduplicated, long: lenNote !== "" },
 			};
 		},
 	});
@@ -179,7 +217,7 @@ export default function (pi: ExtensionAPI) {
 		name: "memory_update",
 		label: "Revise memory",
 		...writeRenderers("Revise memory"),
-		description: "Change a memory by id: its text, kind, tags, pin, or scope (global true/false). Prefer this to saving a correcting memory.",
+		description: "Change a memory by id: its text, kind, tags, pin. To move it, set global or project. Prefer this to saving a correcting memory.",
 		promptSnippet: "memory_update: revise a memory by id when it is wrong or incomplete",
 		parameters: Type.Object({
 			id: Type.Number(),
@@ -187,24 +225,32 @@ export default function (pi: ExtensionAPI) {
 			kind: Type.Optional(StringEnum(MEMORY_KINDS)),
 			tags: Type.Optional(Type.Array(Type.String())),
 			pinned: Type.Optional(Type.Boolean()),
-			global: Type.Optional(Type.Boolean({ description: "true: global; false: this project." })),
+			global: Type.Optional(Type.Boolean({ description: "true: move to global; false: to this folder's project." })),
+			project: Type.Optional(Type.String({ description: "Move it to this project" })),
+			in: Type.Optional(Type.String({ description: "Project it is in now" })),
 		}),
 		annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
 		executionMode: "sequential",
 		async execute(_id, params, _signal, _onUpdate, ctx) {
-			readable(ctx, params.id);
+			// "project" moves the memory; "in" only says where it is now, so reaching a memory in
+			// another project never relocates it by accident.
+			if (params.global !== undefined && params.project) throw new Error("pass either global or project, not both");
+			const row = readable(ctx, params.id, params.in ?? params.project);
+			const moveTo = params.global === true ? GLOBAL_SCOPE : params.project ? projectScope(ctx, params.project) : params.global === false ? resolveProjectScope(ctx.cwd) : undefined;
 			const updated = openStore().update(params.id, {
 				text: params.text,
 				kind: params.kind as MemoryKind | undefined,
 				tags: params.tags,
 				pinned: params.pinned,
-				scope: params.global === undefined ? undefined : writeScope(ctx, params.global),
+				scope: moveTo && moveTo !== row.scope ? moveTo : undefined,
 			})!;
 			touch(updated);
-			const note = params.text ? lengthNote(params.text, settings.write.warnChars, settings.recall.inlineChars) : "";
+			const moved = updated.scope !== row.scope ? `\nMoved from ${row.scope} to ${updated.scope}.` : "";
+			const lenNote = params.text ? lengthNote(params.text, settings.write.warnChars, settings.recall.inlineChars) : "";
+			const note = lenNote + moved;
 			return {
 				content: [{ type: "text", text: `Updated memory ${formatRow(updated)}${note}` }],
-				details: { id: updated.id, scope: updated.scope, long: note !== "" },
+				details: { id: updated.id, scope: updated.scope, long: lenNote !== "" },
 			};
 		},
 	});
@@ -218,11 +264,12 @@ export default function (pi: ExtensionAPI) {
 		parameters: Type.Object({
 			id: Type.Number(),
 			reason: Type.String({ description: "Shown to the user, e.g. 'merged into #9'." }),
+			project: projectArg(),
 		}),
 		annotations: { readOnlyHint: false, destructiveHint: true, openWorldHint: false },
 		executionMode: "sequential",
 		async execute(_id, params, _signal, _onUpdate, ctx) {
-			const row = readable(ctx, params.id);
+			const row = readable(ctx, params.id, params.project);
 			// Deletion cannot be undone (short of a restore): a person confirms every one.
 			const ok = ctx.hasUI ? await ctx.ui.confirm(`Delete memory #${row.id}? (${params.reason})`, formatRow(row)) : false;
 			if (!ok) {
@@ -250,11 +297,12 @@ export default function (pi: ExtensionAPI) {
 			query: Type.Optional(Type.String({ description: "Words to look for. Omit for the most recent." })),
 			kinds: Type.Optional(Type.Array(StringEnum(MEMORY_KINDS))),
 			limit: Type.Optional(Type.Number({ description: `Default ${SEARCH_LIMIT}, at most ${SEARCH_MAX}.` })),
+			project: projectArg(),
 		}),
 		annotations: { readOnlyHint: true, openWorldHint: false },
 		async execute(_id, params, _signal, _onUpdate, ctx) {
 			const rows = openStore().search({
-				scopes: resolveReadScopes(ctx.cwd),
+				scopes: readScopes(ctx, params.project),
 				query: params.query,
 				kinds: params.kinds as MemoryKind[] | undefined,
 				limit: Math.min(SEARCH_MAX, Math.max(1, Math.floor(params.limit ?? SEARCH_LIMIT))),
@@ -275,10 +323,11 @@ export default function (pi: ExtensionAPI) {
 		promptSnippet: "memory_get: full text of memories by id",
 		parameters: Type.Object({
 			ids: Type.Array(Type.Number(), { description: `Memory ids, at most ${GET_MAX_IDS}.`, minItems: 1 }),
+			project: projectArg(),
 		}),
 		annotations: { readOnlyHint: true, openWorldHint: false },
 		async execute(_id, params, _signal, _onUpdate, ctx) {
-			const scopes = resolveReadScopes(ctx.cwd);
+			const scopes = readScopes(ctx, params.project);
 			const unique = [...new Set(params.ids.map((i) => Math.floor(i)))];
 			const ids = unique.slice(0, GET_MAX_IDS);
 			const rows = openStore().getMany(ids).filter((r) => scopes.includes(r.scope));
@@ -519,22 +568,64 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.registerCommand("memory-tidy", {
-		description: "Review superseded, overlapping, long and old-summary memories; delete or merge what you approve",
-		handler: async (_args, ctx) => {
+		description: "Move misfiled memories, then review overlapping, long and old ones (/memory-tidy [all])",
+		getArgumentCompletions: (prefix) => ("all".startsWith(prefix.trim()) ? [{ value: "all", label: "all", description: "every project, not just this one" }] : null),
+		handler: async (args, ctx) => {
 			const s = openStore();
-			const scopes = resolveReadScopes(ctx.cwd);
+			const everywhere = args.trim().toLowerCase() === "all";
+			const scopes = everywhere ? s.scopes() : resolveReadScopes(ctx.cwd);
+
+			// Memories filed under a folder that is not a git repository, whose text names a project.
+			// A scope is a repository when a git directory of that name exists under the repo roots.
+			const repos = findRepos(defaultRepoRoots());
+			const here = resolveProjectScope(ctx.cwd);
+			const inRepo = isInGitRepo(ctx.cwd);
+			const misfiled = findMisfiled(
+				s.inScopes(scopes),
+				(scope) => !repos.has(scope.slice("project:".length)) && !(inRepo && scope === here),
+				[...repos.keys()],
+			);
 			const candidates = s.tidyCandidates(scopes, { keepSummaries: settings.summaries.keep, longChars: settings.write.warnChars });
-			if (candidates.length === 0) return ctx.ui.notify("Nothing to tidy.", "info");
+			const total = misfiled.length + candidates.length;
+			const where = everywhere ? "every project" : scopes.join(" and ");
+			if (total === 0) return ctx.ui.notify(`Nothing to tidy in ${where}.`, "info");
+			const counts = new Map<string, number>();
+			for (const c of candidates) counts.set(c.type, (counts.get(c.type) ?? 0) + 1);
+			const summary = [...(misfiled.length ? [`${misfiled.length} misfiled`] : []), ...[...counts].map(([t, n]) => `${n} ${t}`)].join(", ");
 			if (!ctx.hasUI) {
-				// Never delete without a person confirming each row.
-				console.log(candidates.map((c) => `${c.type} #${c.drop.id}: ${c.reason}`).join("\n"));
+				// Never change anything without a person confirming each row.
+				console.log([`${total} suggestions in ${where}: ${summary}`, ...misfiled.map((m) => `misfiled #${m.row.id}: ${m.row.scope} -> ${m.to} (${m.evidence})`), ...candidates.map((c) => `${c.type} #${c.drop.id}: ${c.reason}`)].join("\n"));
 				return;
 			}
+			ctx.ui.notify(`Memory tidy in ${where}: ${total} suggestions (${summary}).${everywhere ? "" : " /memory-tidy all covers every project."}`, "info");
+
 			let deleted = 0;
+			let moved = 0;
+			let kept = 0;
+			let stopped = false;
 			const merges: string[] = [];
 			const shorten: number[] = [];
-			for (const [i, c] of candidates.entries()) {
+			let n = 0;
+			for (const m of misfiled) {
+				if (!s.get(m.row.id)) continue;
+				n++;
+				const body = `${m.row.scope} is a folder, not a project, and this mentions ${m.evidence}.\n\nMove to ${m.to}:\n  ${formatRow(m.row)}`;
+				const choice = await ctx.ui.select(`Memory tidy ${n}/${total} (misfiled)\n\n${body}`, [`Move to ${m.to}`, "Make global", "Keep here", "Stop"]);
+				if (choice === undefined || choice === "Stop") {
+					stopped = true;
+					break;
+				}
+				try {
+					if (choice.startsWith("Move to")) (s.update(m.row.id, { scope: m.to }), moved++);
+					else if (choice === "Make global") (s.update(m.row.id, { scope: GLOBAL_SCOPE }), moved++);
+					else kept++;
+				} catch (err) {
+					ctx.ui.notify(`Could not move #${m.row.id}: ${(err as Error).message}`, "warning");
+				}
+			}
+			for (const c of stopped ? [] : candidates) {
 				if (!s.get(c.drop.id)) continue; // removed earlier in this pass
+				n++;
 				const body =
 					`${c.reason}\n\n${c.type === "extends" ? "Fold in" : c.type === "too-long" ? "Shorten" : "Delete"}:\n  ${formatRow(c.drop)}` +
 					(c.keep ? `\n\nKeep:\n  ${formatRow(c.keep)}` : "");
@@ -547,14 +638,25 @@ export default function (pi: ExtensionAPI) {
 								"Keep both",
 								"Stop",
 							];
-				const choice = await ctx.ui.select(`Memory tidy ${i + 1}/${candidates.length} (${c.type})\n\n${body}`, options);
+				const choice = await ctx.ui.select(`Memory tidy ${n}/${total} (${c.type})\n\n${body}`, options);
 				if (choice === undefined || choice === "Stop") break;
 				if (choice === "Delete" && s.forget(c.drop.id)) deleted++;
-				if (choice === "Ask agent to merge") merges.push(`#${c.drop.id} into #${c.keep!.id}`);
-				if (choice === "Ask agent to shorten") shorten.push(c.drop.id);
+				else if (choice === "Ask agent to merge") merges.push(`#${c.drop.id} into #${c.keep!.id}`);
+				else if (choice === "Ask agent to shorten") shorten.push(c.drop.id);
+				else kept++;
 			}
 			const sent = merges.length + shorten.length;
-			ctx.ui.notify(`Memory tidy: deleted ${deleted}${sent ? `, ${sent} sent to the agent` : ""}.`, "info");
+			const done = [
+				moved ? `moved ${moved}` : "",
+				deleted ? `deleted ${deleted}` : "",
+				sent ? `${sent} sent to the agent to ${merges.length && shorten.length ? "merge or shorten" : merges.length ? "merge" : "shorten"}` : "",
+				kept ? `kept ${kept}` : "",
+			].filter(Boolean);
+			ctx.ui.notify(`Memory tidy: ${done.length ? done.join(", ") : "no changes"}.`, "info");
+			if (moved) {
+				side.touched = side.touched.map((r) => s.get(r.id) ?? r);
+				sidebar?.refresh();
+			}
 			if (sent === 0) return;
 			// Rewritten text needs the model.
 			const asks: string[] = [];
